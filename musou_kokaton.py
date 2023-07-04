@@ -97,6 +97,10 @@ class Bird(pg.sprite.Sprite):
             for k, mv in __class__.delta.items():
                 if key_lst[k]:
                     self.rect.move_ip(-self.speed*mv[0], -self.speed*mv[1])
+                if key_lst[pg.K_LSHIFT]:
+                    self.rect.move_jp(-self.speed*2*mv[0], -self.speed*2*mv[1])    
+                
+                    
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
@@ -268,11 +272,13 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
+            
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
         screen.blit(bg_img, [0, 0])
 
-        if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
+
+        if tmr%1 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
 
         for emy in emys:
@@ -295,6 +301,11 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+        
+        if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT:  #左シフトが押されていればスピード２０
+                    bird.speed = 20
+        if event.type == pg.KEYUP and event.key == pg.K_LSHIFT:  #押されていなければスピード１０
+                    bird.speed = 10
 
         bird.update(key_lst, screen)
         beams.update()
@@ -309,6 +320,7 @@ def main():
         pg.display.update()
         tmr += 1
         clock.tick(50)
+
 
 
 if __name__ == "__main__":
