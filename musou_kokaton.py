@@ -6,8 +6,8 @@ import time
 import pygame as pg
 
 
-WIDTH = 1600  # ゲームウィンドウの幅
-HEIGHT = 900  # ゲームウィンドウの高さ
+WIDTH = 1200  # ゲームウィンドウの幅
+HEIGHT =  700  # ゲームウィンドウの高さ
 
 
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
@@ -285,6 +285,7 @@ class Score:
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
         self.score = 0
+
         self.image = self.font.render(f"Score: {self.score}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -296,6 +297,24 @@ class Score:
         self.image = self.font.render(f"Score: {self.score}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+
+
+class NeoGravity(pg.sprite.Sprite):
+        def __init__(self,life):
+
+            super().__init__()
+            color = (0,0,0)
+            self.image = pg.Surface((WIDTH, HEIGHT))
+            self.image.set_alpha(200)
+            self.rect = self.image.get_rect()
+            pg.draw.rect(self.image, color, pg.Rect(0,0,WIDTH, HEIGHT))
+            self.rect.center = WIDTH/2, HEIGHT/2
+            self.life = life
+
+        def update(self):
+            self.life -= 1 
+            if self.life < 0:
+                self.kill() 
 
 class Gravity(pg.sprite.Sprite):
     """
@@ -318,6 +337,7 @@ class Gravity(pg.sprite.Sprite):
             self.kill()
 
 
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -329,6 +349,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    neogravity = pg.sprite.Group()
     shields=pg.sprite.Group()
     gravity = pg.sprite.Group()
 
@@ -345,6 +366,24 @@ def main():
                     score.score_up(-100)
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+
+            if (event.type == pg.KEYDOWN) and (event.key == pg.K_RETURN):
+                if score.score > 200:  #発動条件
+                    score.score_up(-200)  #消費スコア
+                    neogravity.add(NeoGravity (400))  # 爆発エフェクト
+
+                    for bomb in pg.sprite.groupcollide(bombs, neogravity, True, False): 
+                        exps.add(Explosion(bomb, 50)) # 爆発エフェクト
+                        score.score_up(1)  # 1点アップ
+
+                    for emy in pg.sprite.groupcollide(emys, neogravity , True, False): 
+                        exps.add(Explosion(emy, 50)) # 爆発エフェクト
+                        score.score_up(10)  # 10点アップ
+
+        screen.blit(bg_img, [0, 0])
+
+        if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
+            # exps.add(Explosion(bomb,50))
 
             if event.type == pg.KEYDOWN and event.key == pg.K_CAPSLOCK and len(shields) == 0:
                 if score.score>50 :
@@ -382,6 +421,24 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.score_up(1)  # 1点アップ
 
+        for bomb in pg.sprite.groupcollide(bombs, neogravity, True, False): 
+                        exps.add(Explosion(bomb, 50)) # 爆発エフェクト
+                        score.score_up(1)  # 1点アップ
+
+        for emy in pg.sprite.groupcollide(emys, neogravity , True, False): 
+                exps.add(Explosion(emy, 50)) # 爆発エフェクト
+                score.score_up(10)  # 10点アップ
+        for bomb in pg.sprite.groupcollide(bombs, gravity, True, False).keys():
+             exps.add(Explosion(bomb, 50)) # 爆発エフェクト
+             score.score_up(1)  # 1点アップ
+
+        if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
+            bird.change_img(8, screen) # こうかとん悲しみエフェクト
+            score.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
+
         # if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
         #     bird.change_img(8, screen) # こうかとん悲しみエフェクト
         #     score.update(screen)
@@ -405,7 +462,8 @@ def main():
         if event.type == pg.KEYUP and event.key == pg.K_LSHIFT:  #押されていなければスピード１０
                     bird.speed = 10
 
-
+        neogravity.update()
+        neogravity.draw(screen)
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
@@ -428,6 +486,6 @@ def main():
 
 if __name__ == "__main__":
     pg.init()
-    main()
+    main() 
     pg.quit()
     sys.exit()
